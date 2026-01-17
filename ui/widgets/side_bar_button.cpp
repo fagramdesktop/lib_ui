@@ -106,7 +106,19 @@ bool SideBarButton::locked() const {
 	return _lock.locked;
 }
 
+void SideBarButton::setHideTitle(bool hide) {
+	if (_hideTitle == hide) {
+		return;
+	}
+	_hideTitle = hide;
+	resizeToWidth(width());
+	update();
+}
+
 int SideBarButton::resizeGetHeight(int newWidth) {
+	if (_hideTitle) {
+		return _st.textTop + 4;
+	}
 	auto result = _st.minHeight;
 	const auto text = std::min(
 		_text.countHeight(newWidth - _st.textSkip * 2),
@@ -154,14 +166,16 @@ void SideBarButton::paintEvent(QPaintEvent *e) {
 	} else {
 		icon.paint(p, x, y, width());
 	}
-	p.setPen(_active ? _st.textFgActive : _st.textFg);
-	_text.draw(p, {
-		.position = { _st.textSkip, _st.textTop },
-		.availableWidth = (width() - 2 * _st.textSkip),
-		.align = style::al_top,
-		.pausedEmoji = _paused && _paused(),
-		.elisionLines = kMaxLabelLines,
-	});
+	if (!_hideTitle) {
+		p.setPen(_active ? _st.textFgActive : _st.textFg);
+		_text.draw(p, {
+			.position = { _st.textSkip, _st.textTop },
+			.availableWidth = (width() - 2 * _st.textSkip),
+			.align = style::al_top,
+			.pausedEmoji = _paused && _paused(),
+			.elisionLines = kMaxLabelLines,
+		});
+	}
 
 	if (_iconCacheBadgeWidth) {
 		const auto desiredLeft = width() / 2 + _st.badgePosition.x();
@@ -186,7 +200,7 @@ void SideBarButton::paintEvent(QPaintEvent *e) {
 			width());
 	}
 
-	if (_lock.locked) {
+	if (_lock.locked && !_hideTitle) {
 		const auto lineWidths = _text.countLineWidths(
 			width() - 2 * _st.textSkip,
 			{ .reserve = kMaxLabelLines });

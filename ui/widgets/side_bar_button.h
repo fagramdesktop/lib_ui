@@ -34,6 +34,7 @@ public:
 		const style::icon *iconOverride,
 		const style::icon *iconOverrideActive = nullptr);
 	void setLocked(bool locked);
+	void setHideTitle(bool hide);
 
 	int resizeGetHeight(int newWidth) override;
 
@@ -62,6 +63,7 @@ private:
 	int _iconCacheBadgeWidth = 0;
 	bool _active = false;
 	bool _badgeMuted = false;
+	bool _hideTitle = false;
 
 	Fn<bool()> _paused;
 	Text::MarkedContext _context;
