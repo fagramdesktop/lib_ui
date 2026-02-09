@@ -348,12 +348,15 @@ void PanelAnimation::setAlphaDuration() {
 void PanelAnimation::start() {
 	Assert(!_finalImage.isNull());
 	RoundShadowAnimation::start(_finalWidth, _finalHeight, _finalImage.devicePixelRatio());
-	auto checkCorner = [this](const Corner &corner) {
+	auto checkCorner = [this](Corner &corner) {
 		if (!corner.valid()) return;
-		if (_startWidth >= 0) Assert(corner.width <= _startWidth);
-		if (_startHeight >= 0) Assert(corner.height <= _startHeight);
-		Assert(corner.width <= _finalInnerWidth);
-		Assert(corner.height <= _finalInnerHeight);
+		if ((_startWidth >= 0 && corner.width > _startWidth)
+			|| (_startHeight >= 0 && corner.height > _startHeight)
+			|| corner.width > _finalInnerWidth
+			|| corner.height > _finalInnerHeight) {
+			corner.image = QImage();
+			corner.width = corner.height = 0;
+		}
 	};
 	checkCorner(_topLeft);
 	checkCorner(_topRight);
