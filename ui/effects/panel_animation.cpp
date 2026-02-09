@@ -18,7 +18,14 @@ void RoundShadowAnimation::start(int frameWidth, int frameHeight, float64 device
 
 	_frameWidth = frameWidth;
 	_frameHeight = frameHeight;
+	if (_frameWidth <= 0 || _frameHeight <= 0) {
+		return;
+	}
 	_frame = QImage(_frameWidth, _frameHeight, QImage::Format_ARGB32_Premultiplied);
+	if (_frame.isNull()) {
+		_frameWidth = _frameHeight = 0;
+		return;
+	}
 	_frame.setDevicePixelRatio(devicePixelRatio);
 	_frameIntsPerLine = (_frame.bytesPerLine() >> 2);
 	_frameInts = reinterpret_cast<uint32*>(_frame.bits());
@@ -85,14 +92,19 @@ void RoundShadowAnimation::setCornerMask(Corner &corner, const QImage &image) {
 QImage RoundShadowAnimation::cloneImage(const style::icon &source) {
 	if (source.empty()) return QImage();
 
-	auto result = QImage(
-		source.size() * style::DevicePixelRatio(),
-		QImage::Format_ARGB32_Premultiplied);
+	const auto size = source.size() * style::DevicePixelRatio();
+	if (size.isEmpty()) return QImage();
+
+	auto result = QImage(size, QImage::Format_ARGB32_Premultiplied);
+	if (result.isNull()) return QImage();
+
 	result.setDevicePixelRatio(style::DevicePixelRatio());
 	result.fill(Qt::transparent);
 	{
 		QPainter p(&result);
-		source.paint(p, 0, 0, source.width());
+		if (p.isActive()) {
+			source.paint(p, 0, 0, source.width());
+		}
 	}
 	return result;
 }

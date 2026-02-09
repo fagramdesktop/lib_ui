@@ -119,14 +119,23 @@ QPixmap GrabWidget(not_null<QWidget*> target, QRect rect, QColor bg) {
 		rect = target->rect();
 	}
 
+	if (!rect.isValid() || rect.isEmpty()) {
+		return QPixmap();
+	}
+
 	auto result = QPixmap(rect.size() * style::DevicePixelRatio());
+	if (result.isNull()) {
+		return QPixmap();
+	}
 	result.setDevicePixelRatio(style::DevicePixelRatio());
 	if (!target->testAttribute(Qt::WA_OpaquePaintEvent)) {
 		result.fill(bg);
 	}
 	{
 		QPainter p(&result);
-		RenderWidget(p, target, QPoint(), rect);
+		if (p.isActive()) {
+			RenderWidget(p, target, QPoint(), rect);
+		}
 	}
 	return result;
 }
@@ -137,16 +146,25 @@ QImage GrabWidgetToImage(not_null<QWidget*> target, QRect rect, QColor bg) {
 		rect = target->rect();
 	}
 
+	if (!rect.isValid() || rect.isEmpty()) {
+		return QImage();
+	}
+
 	auto result = QImage(
 		rect.size() * style::DevicePixelRatio(),
 		QImage::Format_ARGB32_Premultiplied);
+	if (result.isNull()) {
+		return QImage();
+	}
 	result.setDevicePixelRatio(style::DevicePixelRatio());
 	if (!target->testAttribute(Qt::WA_OpaquePaintEvent)) {
 		result.fill(bg);
 	}
-	if (rect.isValid()) {
+	{
 		QPainter p(&result);
-		RenderWidget(p, target, QPoint(), rect);
+		if (p.isActive()) {
+			RenderWidget(p, target, QPoint(), rect);
+		}
 	}
 	return result;
 }
