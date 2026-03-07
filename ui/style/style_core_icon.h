@@ -23,16 +23,24 @@ public:
 		static_assert(N > 0, "invalid image data");
 	}
 
-	const uchar *data() const {
-		return _data;
+	template <int N, int M>
+	IconMask(const uchar (&data)[N], const uchar (&overrideData)[M])
+	: _data(data)
+	, _size(N)
+	, _overrideData(overrideData)
+	, _overrideSize(M) {
+		static_assert(N > 0, "invalid image data");
+		static_assert(M > 0, "invalid override image data");
 	}
-	int size() const {
-		return _size;
-	}
+
+	[[nodiscard]] const uchar *data() const;
+	[[nodiscard]] int size() const;
 
 private:
 	const uchar *_data;
 	const int _size;
+	const uchar *_overrideData = nullptr;
+	int _overrideSize = 0;
 
 };
 
@@ -369,6 +377,7 @@ private:
 
 void ResetIcons();
 void DestroyIcons();
+void SetUseIconOverride(bool use);
 
 } // namespace internal
 } // namespace style

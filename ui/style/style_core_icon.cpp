@@ -32,6 +32,8 @@ QMutex IconMasksMutex;
 base::flat_map<QPair<const IconMask*, uint32>, QPixmap> iconPixmaps;
 base::flat_set<IconData*> iconData;
 
+bool UseIconOverride = false;
+
 [[nodiscard]] QImage CreateIconMask(
 		not_null<const IconMask*> mask,
 		int scale,
@@ -511,6 +513,18 @@ void DestroyIcons() {
 
 	QMutexLocker lock(&IconMasksMutex);
 	IconMasks.clear();
+}
+
+void SetUseIconOverride(bool use) {
+	UseIconOverride = use;
+}
+
+const uchar *IconMask::data() const {
+	return (_overrideData && UseIconOverride) ? _overrideData : _data;
+}
+
+int IconMask::size() const {
+	return (_overrideData && UseIconOverride) ? _overrideSize : _size;
 }
 
 } // namespace internal
