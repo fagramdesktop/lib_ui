@@ -317,6 +317,8 @@ public:
 
 	bool isUndoAvailable() const;
 	bool isRedoAvailable() const;
+	void undo();
+	void redo();
 
 	[[nodiscard]] MarkdownEnabledState markdownEnabledState() const {
 		return _markdownEnabledState;
@@ -487,6 +489,7 @@ private:
 	void processFormatting(int changedPosition, int changedEnd);
 
 	void chopByMaxLength(int insertPosition, int insertLength);
+	void performUndoRedo(bool redo);
 
 	bool processMarkdownReplaces(const QString &appended);
 	//bool processMarkdownReplace(const QString &tag);
@@ -635,6 +638,7 @@ private:
 	bool _instantViewEditorTagsEnabled = false;
 	bool _undoAvailable = false;
 	bool _redoAvailable = false;
+	bool _performingUndoRedo = false;
 	bool _insertedTagsDelayClear = false;
 	bool _inHeightCheck = false;
 

@@ -3318,6 +3318,27 @@ bool InputField::isRedoAvailable() const {
 	return _redoAvailable;
 }
 
+void InputField::undo() {
+	performUndoRedo(false);
+}
+
+void InputField::redo() {
+	performUndoRedo(true);
+}
+
+void InputField::performUndoRedo(bool redo) {
+	const auto wasPerformingUndoRedo = _performingUndoRedo;
+	_performingUndoRedo = true;
+	const auto guard = gsl::finally([&] {
+		_performingUndoRedo = wasPerformingUndoRedo;
+	});
+	if (redo) {
+		_inner->redo();
+	} else {
+		_inner->undo();
+	}
+}
+
 void InputField::processFormatting(int insertPosition, int insertEnd) {
 	// First tag handling (the one we inserted text to).
 	bool startTagFound = false;
@@ -3754,28 +3775,28 @@ void InputField::documentContentsChanged(
 		? _realCharsAdded
 		: charsAdded;
 
-	_correcting = true;
-	QTextCursor(document).joinPreviousEditBlock();
+	if (!_performingUndoRedo) {
+		_correcting = true;
+		QTextCursor(document).joinPreviousEditBlock();
 
-	chopByMaxLength(insertPosition, insertLength);
-	const auto inserted = (_maxLength > 0)
-		? (std::max(
-			std::min(insertPosition + insertLength, _maxLength),
-			insertPosition) - insertPosition)
-		: insertLength;
-	if (document->availableRedoSteps() == 0) {
+		chopByMaxLength(insertPosition, insertLength);
+		const auto inserted = (_maxLength > 0)
+			? (std::max(
+				std::min(insertPosition + insertLength, _maxLength),
+				insertPosition) - insertPosition)
+			: insertLength;
 		const auto pageSize = document->pageSize();
 		processFormatting(insertPosition, insertPosition + inserted);
 		if (document->pageSize() != pageSize) {
 			document->setPageSize(pageSize);
 		}
+		if (document->isEmpty()) {
+			textCursor().setBlockFormat(PrepareBlockFormat(_st));
+		}
+		updateRootFrameFormat();
+		_correcting = false;
+		QTextCursor(document).endEditBlock();
 	}
-	if (document->isEmpty()) {
-		textCursor().setBlockFormat(PrepareBlockFormat(_st));
-	}
-	updateRootFrameFormat();
-	_correcting = false;
-	QTextCursor(document).endEditBlock();
 
 	if (_formattingCursorUpdate) {
 		setTextCursor(*base::take(_formattingCursorUpdate));
@@ -4320,6 +4341,8 @@ void InputField::keyPressEventInner(QKeyEvent *e) {
 			e->setModifiers(changedModifiers);
 		}
 
+		const auto undoRedo = (e == QKeySequence::Undo)
+			|| (e == QKeySequence::Redo);
 		// If we enable this, the Undo/Redo will work through Key_Space
 		// insertions, because they will be in edit blocks with the following
 		// text char format changes. But this will make every entered letter
@@ -4351,6 +4374,12 @@ void InputField::keyPressEventInner(QKeyEvent *e) {
 				trippleEnterExitBlock(cursor);
 			}
 			e->accept();
+		} else if (e == QKeySequence::Undo) {
+			performUndoRedo(false);
+			e->accept();
+		} else if (e == QKeySequence::Redo) {
+			performUndoRedo(true);
+			e->accept();
 		} else {
 			_inner->QTextEdit::keyPressEvent(e);
 		}
@@ -4367,7 +4396,7 @@ void InputField::keyPressEventInner(QKeyEvent *e) {
 			e->setModifiers(oldModifiers);
 		}
 		auto updatedCursor = textCursor();
-		if (updatedCursor.position() == oldPosition) {
+		if (!undoRedo && updatedCursor.position() == oldPosition) {
 			const auto shift = e->modifiers().testFlag(Qt::ShiftModifier);
 			bool check = false;
 			if (key == Qt::Key_PageUp || key == Qt::Key_Up) {
@@ -4392,10 +4421,12 @@ void InputField::keyPressEventInner(QKeyEvent *e) {
 				}
 			}
 		}
-		if (!processMarkdownReplaces(text)) {
-			processInstantReplaces(text);
+		if (!undoRedo) {
+			if (!processMarkdownReplaces(text)) {
+				processInstantReplaces(text);
+			}
+			processSystemTextReplaces(text);
 		}
-		processSystemTextReplaces(text);
 	}
 }
 
