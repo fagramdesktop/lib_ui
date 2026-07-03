@@ -52,7 +52,7 @@ TG_FORCE_INLINE uint64 BlurGetColors(const uchar *p) {
 		+ ((uint64)p[3] << 48);
 }
 
-const QImage &EllipseMaskCached(QSize size) {
+QImage EllipseMaskCached(QSize size) {
 	const auto key = (uint64(uint32(size.width())) << 32)
 		| uint64(uint32(size.height()));
 
