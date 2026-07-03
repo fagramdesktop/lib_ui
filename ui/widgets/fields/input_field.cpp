@@ -2148,7 +2148,6 @@ void InputField::updatePalette() {
 void InputField::addContextMenuHook(ContextMenuHook hook) {
 	_contextMenuHooks.push_back(std::move(hook));
 }
-}
 
 void InputField::setInstantReplaces(const InstantReplaces &replaces) {
 	_mutableInstantReplaces = replaces;
