@@ -19,28 +19,40 @@ namespace internal {
 class IconMask {
 public:
 	template <int N>
-	IconMask(const uchar (&data)[N]) : _data(data), _size(N) {
+	IconMask(const uchar (&data)[N], QSize rendered = {})
+	: _data(data)
+	, _size(N)
+	, _rendered(rendered) {
 		static_assert(N > 0, "invalid image data");
 	}
 
 	template <int N, int M>
-	IconMask(const uchar (&data)[N], const uchar (&overrideData)[M])
+	IconMask(
+		const uchar (&data)[N],
+		const uchar (&overrideData)[M],
+		QSize rendered = {})
 	: _data(data)
 	, _size(N)
 	, _overrideData(overrideData)
-	, _overrideSize(M) {
+	, _overrideSize(M)
+	, _rendered(rendered) {
 		static_assert(N > 0, "invalid image data");
 		static_assert(M > 0, "invalid override image data");
+	}
+
+	[[nodiscard]] QSize rendered() const {
+		return _rendered;
 	}
 
 	[[nodiscard]] const uchar *data() const;
 	[[nodiscard]] int size() const;
 
 private:
-	const uchar *_data;
-	const int _size;
+	const uchar *_data = nullptr;
+	const int _size = 0;
 	const uchar *_overrideData = nullptr;
 	int _overrideSize = 0;
+	const QSize _rendered = {};
 
 };
 

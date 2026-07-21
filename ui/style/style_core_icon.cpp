@@ -45,7 +45,7 @@ bool UseIconOverride = false;
 		reinterpret_cast<const char*>(mask->data()),
 		mask->size());
 	if (data.startsWith("SVG:")) {
-		auto size = QSize();
+		auto size = mask->rendered();
 		data = QByteArray::fromRawData(
 			data.constData() + 4,
 			data.size() - 4);
@@ -61,7 +61,9 @@ bool UseIconOverride = false;
 			stream >> width >> height;
 			Assert(stream.status() == QDataStream::Ok);
 
-			size = QSize(width, height);
+			if (size.isEmpty()) {
+				size = QSize(width, height);
+			}
 			data = QByteArray::fromRawData(
 				data.constData() + 8,
 				data.size() - 8);
