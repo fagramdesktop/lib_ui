@@ -30,7 +30,7 @@ public:
 	IconMask(
 		const uchar (&data)[N],
 		const uchar (&overrideData)[M],
-		QSize rendered = {})
+		QSize rendered = {}) requires (M > 8)
 	: _data(data)
 	, _size(N)
 	, _overrideData(overrideData)

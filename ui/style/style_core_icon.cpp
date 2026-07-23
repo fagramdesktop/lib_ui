@@ -522,11 +522,11 @@ void SetUseIconOverride(bool use) {
 }
 
 const uchar *IconMask::data() const {
-	return (_overrideData && UseIconOverride) ? _overrideData : _data;
+	return (_overrideData && _overrideSize > 0 && UseIconOverride) ? _overrideData : _data;
 }
 
 int IconMask::size() const {
-	return (_overrideData && UseIconOverride) ? _overrideSize : _size;
+	return (_overrideData && _overrideSize > 0 && UseIconOverride) ? _overrideSize : _size;
 }
 
 } // namespace internal
