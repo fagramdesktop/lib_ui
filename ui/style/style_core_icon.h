@@ -32,7 +32,7 @@ public:
 	}
 
 	template <int N, int M>
-	IconMask(
+	constexpr IconMask(
 		const uchar (&data)[N],
 		const uchar (&overrideData)[M],
 		QSize rendered = {}) requires (M > 8)
