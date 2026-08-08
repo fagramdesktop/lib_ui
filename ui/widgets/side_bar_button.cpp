@@ -163,8 +163,6 @@ void SideBarButton::setShowText(bool shown) {
 	}
 	update();
 }
-	update();
-}
 
 int SideBarButton::resizeGetHeight(int newWidth) {
 	if (_hideTitle) {
