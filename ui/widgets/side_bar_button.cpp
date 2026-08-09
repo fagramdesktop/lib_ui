@@ -130,19 +130,6 @@ bool SideBarButton::locked() const {
 	return _lock.locked;
 }
 
-void SideBarButton::setHideTitle(bool hide) {
-	if (_hideTitle == hide) {
-		return;
-	}
-	_hideTitle = hide;
-	_showText = !hide;
-	_iconCache = _iconCacheActive = QImage();
-	if (const auto current = width()) {
-		resizeToWidth(current);
-	}
-	update();
-}
-
 void SideBarButton::setShowIcon(bool shown) {
 	if (_showIcon == shown) {
 		return;
@@ -156,7 +143,6 @@ void SideBarButton::setShowText(bool shown) {
 		return;
 	}
 	_showText = shown;
-	_hideTitle = !shown;
 	_iconCache = _iconCacheActive = QImage();
 	if (const auto current = width()) {
 		resizeToWidth(current);
@@ -165,9 +151,7 @@ void SideBarButton::setShowText(bool shown) {
 }
 
 int SideBarButton::resizeGetHeight(int newWidth) {
-	if (_hideTitle) {
-		return _st.textTop + 4;
-	}
+
 	auto result = _st.minHeight;
 	if (!_showText) {
 		return result;
@@ -216,7 +200,7 @@ void SideBarButton::paintEvent(QPaintEvent *e) {
 			icon.paint(p, x, y, width());
 		}
 	}
-	if (_showText && !_hideTitle) {
+	if (_showText) {
 		p.setPen(_active ? _st.textFgActive : _st.textFg);
 		_text.draw(p, {
 			.position = { _st.textSkip, _st.textTop },

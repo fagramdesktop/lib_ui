@@ -34,7 +34,6 @@ public:
 		const style::icon *iconOverride,
 		const style::icon *iconOverrideActive = nullptr);
 	void setLocked(bool locked);
-	void setHideTitle(bool hide);
 	void setShowIcon(bool shown);
 	void setShowText(bool shown);
 
@@ -68,7 +67,6 @@ private:
 	int _iconCacheBadgeWidth = 0;
 	bool _active = false;
 	bool _badgeMuted = false;
-	bool _hideTitle = false;
 	bool _showIcon = true;
 	bool _showText = true;
 
