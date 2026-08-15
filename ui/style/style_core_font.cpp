@@ -177,8 +177,8 @@ struct Metrics {
 	};
 
 	const auto family = font.family();
-	const auto basic = u"Open Sans"_q;
-	if (family == basic || !adjust) {
+	const auto basic = u"Google Sans Flex"_q;
+	if (family == basic || family == u"Google Sans"_q || !adjust) {
 		return simple();
 	}
 
@@ -310,13 +310,16 @@ struct Metrics {
 	const auto monospace = (flags & FontFlag::Monospace) != 0;
 	const auto system = !monospace && (family == SystemFontTag());
 	const auto overriden = !monospace && !system && !family.isEmpty();
+	const auto italic = !monospace && !system && !overriden && (flags & FontFlag::Italic);
 	if (monospace) {
 		font.setFamily(MonospaceFont());
 	} else if (system) {
 	} else if (overriden) {
 		font.setFamily(family);
+	} else if (italic) {
+		font.setFamily(u"Google Sans"_q);
 	} else {
-		font.setFamily("Open Sans"_q);
+		font.setFamily(u"Google Sans Flex"_q);
 	}
 	font.setPixelSize(size);
 
@@ -370,7 +373,7 @@ void StartFonts() {
 
 	style_InitFontsResource();
 
-	const auto name = u"Open Sans"_q;
+	const auto name = u"Google Sans Flex"_q;
 
 	for (const auto &file : QDir(u":/gui/fonts/"_q).entryInfoList()) {
 		LoadCustomFont(file.canonicalFilePath());
@@ -389,12 +392,17 @@ void StartFonts() {
 	}
 
 	QFont::insertSubstitution(name, u"Vazirmatn UI NL"_q);
+	QFont::insertSubstitution(u"Google Sans"_q, u"Vazirmatn UI NL"_q);
 
 #ifdef Q_OS_WIN
 	QFont::insertSubstitutions(name, {
 		// https://qt-project.atlassian.net/browse/QTBUG-134052
 		u"Ebrima"_q,
 		// https://qt-project.atlassian.net/browse/QTBUG-94756
+		u"Nirmala UI"_q,
+	});
+	QFont::insertSubstitutions(u"Google Sans"_q, {
+		u"Ebrima"_q,
 		u"Nirmala UI"_q,
 	});
 #elif defined Q_OS_MAC // Q_OS_WIN
@@ -405,6 +413,7 @@ void StartFonts() {
 		u"Lucida Grande"_q,
 	};
 	QFont::insertSubstitutions(name, list);
+	QFont::insertSubstitutions(u"Google Sans"_q, list);
 #endif // Q_OS_MAC
 }
 
