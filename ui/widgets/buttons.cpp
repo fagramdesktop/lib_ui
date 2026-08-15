@@ -22,6 +22,43 @@
 namespace Ui {
 namespace {
 
+struct CardCornerRadii {
+	int topLeft = 0;
+	int topRight = 0;
+	int bottomLeft = 0;
+	int bottomRight = 0;
+
+	[[nodiscard]] bool empty() const {
+		return !topLeft && !topRight && !bottomLeft && !bottomRight;
+	}
+};
+
+[[nodiscard]] CardCornerRadii FindCardCorners(const QWidget *widget) {
+	if (!widget) {
+		return {};
+	}
+	const QWidget *card = nullptr;
+	for (auto w = widget->parentWidget(); w != nullptr; w = w->parentWidget()) {
+		if (w->property("is_fa_card").toBool()) {
+			card = w;
+			break;
+		}
+	}
+	if (!card) {
+		return {};
+	}
+	const auto pos = widget->mapTo(card, QPoint(0, 0));
+	const auto isTop = (pos.y() <= 3);
+	const auto isBottom = (pos.y() + widget->height() >= card->height() - 3);
+	constexpr auto kRadius = 14;
+	return CardCornerRadii{
+		.topLeft = isTop ? kRadius : 0,
+		.topRight = isTop ? kRadius : 0,
+		.bottomLeft = isBottom ? kRadius : 0,
+		.bottomRight = isBottom ? kRadius : 0,
+	};
+}
+
 class SimpleRippleButton : public RippleButton {
 public:
 	using RippleButton::RippleButton;
@@ -990,7 +1027,48 @@ void SettingsButton::paintEvent(QPaintEvent *e) {
 }
 
 void SettingsButton::paintBg(Painter &p, const QRect &rect, bool over) const {
-	p.fillRect(rect, over ? _st.textBgOver : _st.textBg);
+	if (!over && !_st.textBg->c.alpha()) {
+		return;
+	}
+	const auto color = over ? _st.textBgOver : _st.textBg;
+	const auto corners = FindCardCorners(this);
+	if (corners.empty()) {
+		p.fillRect(rect, color);
+	} else {
+		PainterHighQualityEnabler hq(p);
+		p.setPen(Qt::NoPen);
+		p.setBrush(color);
+		const auto path = ComplexRoundedRectPath(
+			rect,
+			corners.topLeft,
+			corners.topRight,
+			corners.bottomLeft,
+			corners.bottomRight);
+		p.drawPath(path);
+	}
+}
+
+QImage SettingsButton::prepareRippleMask() const {
+	const auto corners = FindCardCorners(this);
+	if (corners.empty()) {
+		return RippleAnimation::RectMask(size());
+	}
+	auto result = QImage(size(), QImage::Format_ARGB32_Premultiplied);
+	result.fill(Qt::transparent);
+	{
+		auto p = QPainter(&result);
+		PainterHighQualityEnabler hq(p);
+		p.setPen(Qt::NoPen);
+		p.setBrush(Qt::white);
+		const auto path = ComplexRoundedRectPath(
+			rect(),
+			corners.topLeft,
+			corners.topRight,
+			corners.bottomLeft,
+			corners.bottomRight);
+		p.drawPath(path);
+	}
+	return result;
 }
 
 void SettingsButton::paintText(Painter &p, bool over, int outerw) const {
