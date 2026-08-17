@@ -2,11 +2,8 @@
   <qresource prefix="/gui/fonts">
     <file>GoogleSansFlexRegular.ttf</file>
     <file>GoogleSansFlexMedium.ttf</file>
-    <file>GoogleSansFlexSemiBold.ttf</file>
-    <file>GoogleSansFlexBold.ttf</file>
     <file>GoogleSansItalic.ttf</file>
-    <file>GoogleSansSemiBoldItalic.ttf</file>
-    <file>GoogleSansBoldItalic.ttf</file>
+    <file>GoogleSansMediumItalic.ttf</file>
     <file>Vazirmatn-UI-NL-Regular.ttf</file>
     <file>Vazirmatn-UI-NL-SemiBold.ttf</file>
   </qresource>
