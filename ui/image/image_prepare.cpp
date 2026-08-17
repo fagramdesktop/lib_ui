@@ -464,7 +464,12 @@ std::array<QImage, 4> PrepareCorners(
 	result.format = reader.format().toLower();
 	result.animated = reader.supportsAnimation()
 		&& (reader.imageCount() > 1);
-	if (!reader.read(&result.image) || result.image.isNull()) {
+	static auto Mutex = QMutex();
+	const auto success = [&] {
+		const auto lock = QMutexLocker(&Mutex);
+		return reader.read(&result.image);
+	}();
+	if (!success || result.image.isNull()) {
 		return {};
 	}
 	return result;
