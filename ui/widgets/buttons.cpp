@@ -63,7 +63,7 @@ enum class CardSegmentPosition {
 						|| w->metaObject()->className() == QStringView(u"FA::Ui::(anonymous namespace)::CardDividerWidget")) {
 						continue;
 					}
-					if (qobject_cast<const VerticalLayout*>(w)) {
+					if (dynamic_cast<const VerticalLayout*>(w)) {
 						self(self, w);
 					} else {
 						rows.push_back(w);
@@ -74,7 +74,7 @@ enum class CardSegmentPosition {
 	};
 
 	for (const auto child : card->children()) {
-		if (const auto layout = qobject_cast<const VerticalLayout*>(child)) {
+		if (const auto layout = dynamic_cast<const VerticalLayout*>(child)) {
 			collect(collect, layout);
 			break;
 		}
