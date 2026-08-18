@@ -16,6 +16,7 @@
 #include "ui/rect.h"
 #include "ui/qt_object_factory.h"
 #include "ui/round_rect.h"
+#include "ui/wrap/vertical_layout.h"
 
 #include <QtGui/QtEvents>
 
@@ -42,33 +43,71 @@ enum class CardSegmentPosition {
 	if (!widget) {
 		return CardSegmentPosition::Single;
 	}
-	QWidget *rowInLayout = const_cast<QWidget*>(widget);
+	const QWidget *card = nullptr;
 	for (auto w = widget->parentWidget(); w != nullptr; w = w->parentWidget()) {
 		if (w->property("is_fa_card").toBool()) {
+			card = w;
 			break;
 		}
-		rowInLayout = w;
 	}
-	const auto layout = rowInLayout ? rowInLayout->parentWidget() : nullptr;
-	if (!layout) {
+	if (!card) {
 		return CardSegmentPosition::Single;
 	}
-	std::vector<QWidget*> visibleRows;
-	for (const auto child : layout->children()) {
-		if (const auto w = qobject_cast<QWidget*>(child)) {
-			if (!w->isHidden() && w->height() > 0) {
-				visibleRows.push_back(w);
+
+	std::vector<const QWidget*> rows;
+	auto collect = [&](auto &self, const QWidget *parent) -> void {
+		for (const auto child : parent->children()) {
+			if (const auto w = qobject_cast<const QWidget*>(child)) {
+				if (!w->isHidden() && w->height() > 0) {
+					if (w->inherits("CardDividerWidget")
+						|| w->metaObject()->className() == QStringView(u"FA::Ui::(anonymous namespace)::CardDividerWidget")) {
+						continue;
+					}
+					if (qobject_cast<const VerticalLayout*>(w)) {
+						self(self, w);
+					} else {
+						rows.push_back(w);
+					}
+				}
 			}
 		}
+	};
+
+	for (const auto child : card->children()) {
+		if (const auto layout = qobject_cast<const VerticalLayout*>(child)) {
+			collect(collect, layout);
+			break;
+		}
 	}
-	const auto it = std::find(visibleRows.begin(), visibleRows.end(), rowInLayout);
-	if (it == visibleRows.end() || visibleRows.size() <= 1) {
+
+	if (rows.size() <= 1) {
 		return CardSegmentPosition::Single;
 	}
-	const auto index = std::distance(visibleRows.begin(), it);
-	if (index == 0) {
+
+	int targetIndex = -1;
+	for (size_t i = 0; i < rows.size(); ++i) {
+		const auto r = rows[i];
+		if (r == widget) {
+			targetIndex = int(i);
+			break;
+		}
+		for (auto w = widget->parentWidget(); w != nullptr && w != card; w = w->parentWidget()) {
+			if (w == r) {
+				targetIndex = int(i);
+				break;
+			}
+		}
+		if (targetIndex != -1) {
+			break;
+		}
+	}
+
+	if (targetIndex == -1) {
+		return CardSegmentPosition::Single;
+	}
+	if (targetIndex == 0) {
 		return CardSegmentPosition::Top;
-	} else if (index == int(visibleRows.size()) - 1) {
+	} else if (targetIndex == int(rows.size()) - 1) {
 		return CardSegmentPosition::Bottom;
 	}
 	return CardSegmentPosition::Middle;
