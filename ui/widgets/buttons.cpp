@@ -31,6 +31,89 @@ namespace {
 	return false;
 }
 
+enum class CardSegmentPosition {
+	Single,
+	Top,
+	Middle,
+	Bottom,
+};
+
+[[nodiscard]] CardSegmentPosition FindCardSegmentPosition(const QWidget *widget) {
+	if (!widget) {
+		return CardSegmentPosition::Single;
+	}
+	QWidget *rowInLayout = const_cast<QWidget*>(widget);
+	for (auto w = widget->parentWidget(); w != nullptr; w = w->parentWidget()) {
+		if (w->property("is_fa_card").toBool()) {
+			break;
+		}
+		rowInLayout = w;
+	}
+	const auto layout = rowInLayout ? rowInLayout->parentWidget() : nullptr;
+	if (!layout) {
+		return CardSegmentPosition::Single;
+	}
+	std::vector<QWidget*> visibleRows;
+	for (const auto child : layout->children()) {
+		if (const auto w = qobject_cast<QWidget*>(child)) {
+			if (!w->isHidden() && w->height() > 0) {
+				visibleRows.push_back(w);
+			}
+		}
+	}
+	const auto it = std::find(visibleRows.begin(), visibleRows.end(), rowInLayout);
+	if (it == visibleRows.end() || visibleRows.size() <= 1) {
+		return CardSegmentPosition::Single;
+	}
+	const auto index = std::distance(visibleRows.begin(), it);
+	if (index == 0) {
+		return CardSegmentPosition::Top;
+	} else if (index == int(visibleRows.size()) - 1) {
+		return CardSegmentPosition::Bottom;
+	}
+	return CardSegmentPosition::Middle;
+}
+
+[[nodiscard]] QPainterPath MakeCardSegmentPath(
+		const QRectF &r,
+		CardSegmentPosition pos,
+		float64 largeRadius = 24.0,
+		float64 smallRadius = 4.0) {
+	const auto rtl = (pos == CardSegmentPosition::Top || pos == CardSegmentPosition::Single)
+		? largeRadius
+		: smallRadius;
+	const auto rtr = (pos == CardSegmentPosition::Top || pos == CardSegmentPosition::Single)
+		? largeRadius
+		: smallRadius;
+	const auto rbr = (pos == CardSegmentPosition::Bottom || pos == CardSegmentPosition::Single)
+		? largeRadius
+		: smallRadius;
+	const auto rbl = (pos == CardSegmentPosition::Bottom || pos == CardSegmentPosition::Single)
+		? largeRadius
+		: smallRadius;
+
+	auto path = QPainterPath();
+	path.moveTo(r.left() + rtl, r.top());
+	path.lineTo(r.right() - rtr, r.top());
+	if (rtr > 0.) {
+		path.arcTo(QRectF(r.right() - 2 * rtr, r.top(), 2 * rtr, 2 * rtr), 90, -90);
+	}
+	path.lineTo(r.right(), r.bottom() - rbr);
+	if (rbr > 0.) {
+		path.arcTo(QRectF(r.right() - 2 * rbr, r.bottom() - 2 * rbr, 2 * rbr, 2 * rbr), 0, -90);
+	}
+	path.lineTo(r.left() + rbl, r.bottom());
+	if (rbl > 0.) {
+		path.arcTo(QRectF(r.left(), r.bottom() - 2 * rbl, 2 * rbl, 2 * rbl), 270, -90);
+	}
+	path.lineTo(r.left(), r.top() + rtl);
+	if (rtl > 0.) {
+		path.arcTo(QRectF(r.left(), r.top(), 2 * rtl, 2 * rtl), 180, -90);
+	}
+	path.closeSubpath();
+	return path;
+}
+
 class SimpleRippleButton : public RippleButton {
 public:
 	using RippleButton::RippleButton;
@@ -1011,7 +1094,14 @@ void SettingsButton::paintBg(Painter &p, const QRect &rect, bool over) const {
 
 QImage SettingsButton::prepareRippleMask() const {
 	if (IsInsideCard(this)) {
-		return RippleAnimation::RoundRectMask(size(), 14);
+		const auto pos = FindCardSegmentPosition(this);
+		return RippleAnimation::MaskByDrawer(size(), false, [&](QPainter &p) {
+			PainterHighQualityEnabler hq(p);
+			p.setPen(Qt::NoPen);
+			p.setBrush(Qt::white);
+			const auto r = QRectF(0, 0, width(), height());
+			p.drawPath(MakeCardSegmentPath(r, pos, 24.0, 4.0));
+		});
 	}
 	return RippleAnimation::RectMask(size());
 }
