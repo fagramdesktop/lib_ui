@@ -55,27 +55,19 @@ enum class CardSegmentPosition {
 	}
 
 	std::vector<const QWidget*> rows;
-	auto collect = [&](auto &self, const QWidget *parent) -> void {
-		for (const auto child : parent->children()) {
-			if (const auto w = qobject_cast<const QWidget*>(child)) {
-				if (!w->isHidden() && w->height() > 0) {
-					if (w->inherits("CardDividerWidget")
-						|| w->metaObject()->className() == QStringView(u"FA::Ui::(anonymous namespace)::CardDividerWidget")) {
-						continue;
-					}
-					if (dynamic_cast<const VerticalLayout*>(w)) {
-						self(self, w);
-					} else {
+	for (const auto child : card->children()) {
+		if (const auto layout = dynamic_cast<const VerticalLayout*>(child)) {
+			for (const auto rowChild : layout->children()) {
+				if (const auto w = qobject_cast<const QWidget*>(rowChild)) {
+					if (!w->isHidden() && w->height() > 0) {
+						if (w->inherits("CardDividerWidget")
+							|| w->metaObject()->className() == QStringView(u"FA::Ui::(anonymous namespace)::CardDividerWidget")) {
+							continue;
+						}
 						rows.push_back(w);
 					}
 				}
 			}
-		}
-	};
-
-	for (const auto child : card->children()) {
-		if (const auto layout = dynamic_cast<const VerticalLayout*>(child)) {
-			collect(collect, layout);
 			break;
 		}
 	}
@@ -83,6 +75,10 @@ enum class CardSegmentPosition {
 	if (rows.size() <= 1) {
 		return CardSegmentPosition::Single;
 	}
+
+	std::sort(rows.begin(), rows.end(), [](const auto a, const auto b) {
+		return a->y() < b->y();
+	});
 
 	int targetIndex = -1;
 	for (size_t i = 0; i < rows.size(); ++i) {
