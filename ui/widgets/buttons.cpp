@@ -20,6 +20,8 @@
 
 #include <QtGui/QtEvents>
 
+#include <string_view>
+
 namespace Ui {
 namespace {
 
@@ -61,7 +63,7 @@ enum class CardSegmentPosition {
 				if (const auto w = qobject_cast<const QWidget*>(rowChild)) {
 					if (!w->isHidden() && w->height() > 0) {
 						if (w->inherits("CardDividerWidget")
-							|| w->metaObject()->className() == QStringView(u"FA::Ui::(anonymous namespace)::CardDividerWidget")) {
+							|| std::string_view(w->metaObject()->className()) == "FA::Ui::(anonymous namespace)::CardDividerWidget") {
 							continue;
 						}
 						rows.push_back(w);
