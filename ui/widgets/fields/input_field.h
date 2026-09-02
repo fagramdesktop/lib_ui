@@ -459,6 +459,7 @@ private:
 	};
 
 	void handleContentsChanged();
+	void refreshSpoilerOverlay();
 	void updateRootFrameFormat();
 	bool viewportEventInner(QEvent *e);
 
